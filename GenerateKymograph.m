@@ -24,7 +24,9 @@ end
 imagesc(kymograph); colormap gray;
 
 
-%% incomplete -- use this function if improfile plots look too noisy
+%% incomplete -- use this function if improfile plots look too noisy.
+% This samples points that are perpendicular to the line you drew and
+% averages.
 function [avgprofile] = avgline(linedrawn,myimage)
 
 
