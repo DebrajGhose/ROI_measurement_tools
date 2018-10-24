@@ -1,61 +1,73 @@
-% use this to create ROIs for each cell. 
-
-%% 1 - draw polygon or polyline for first timepoint
+% use this to create ROIs for each cell.
 
 clear all
 close all
 
-framenumber1 = 1;
-framenumber2 = 41;
+filename = 'Stablized C1-rcc103_s3-1';
+cellname = '_1';
 
-filename = 'GhoseFRAP_17966_202_R3D';
-
-im = imread( [ filename , '.tif'],framenumber1);
-imagesc(im); colormap gray;
-drawnow
-
-el = drawpolyline;
-
-%% 2 -  store first polygon in a matrix and draw polygon for last timepoint
-
-elpos1 = el.Position; %store positions of points in matrix form
-
-close all
-
-im = imread( [ filename , '.tif'],framenumber2) ;
-imagesc(im); colormap gray;
-
-el2 = drawpolyline([] ,'Position',elpos1); %load the last timepoint and grab polyline/polygon coordinates from there
-
-%% 3 - store second polygon
-
-elpos2 = el2.Position; %store positions of points in the last timepoint in matrix form
-
-%% 4 - Morph polygon%
-%This is done to gradually change the polygon drawn at the first timepoint 
-%to the polygon drawn in the last timepoint. Useful for cells that move or 
-%rotate over the course of the movie.
-
+frames = [1 22 37];
+framecount = 0; %keep track of how many frames we have gone through
 ROI = {}; % ROI cell will contain ROI across all timepoints
 
-ROI{framenumber1} = elpos1;
+%% 1 Create ROIs
 
-ROI{framenumber2} = elpos2;
-
-deltapos = (elpos2-elpos1)/(framenumber2-framenumber1);
-
-for i = framenumber1+1 : framenumber2-1 %apply linear transform to fill in shapes between initial and final timepoints
+for num=frames
+    framecount = framecount + 1; %increment framecount
     
-   ROI{i} = ROI{i-1} + deltapos; 
+    close all
+    im = imread( [ filename , '.tif'],num) ;
+    imagesc(im); colormap gray;
+    
+    if framecount == 1 %for first frame, simply create a polygon
+        el = drawpolygon;
+        
+        while(1) %pause code to make changes to your ROI, give user option to proceed once they are satisfied
+            m = input('Happy with ROI? ','s');
+            if m == 'y'
+                break
+            end
+        end
+        
+    else % for subsequent frames, show polygon from previous frame
+        
+        el = drawpolygon([] ,'Position',ROI{frames(framecount-1)});
+        
+        while(1) %pause code to make changes to your ROI, give user option to proceed once they are satisfied
+            m = input('Happy with ROI? ','s');
+            if m == 'y'
+                break
+            end
+        end
+    end
+    
+    ROI{num} = el.Position; %store polygon in ROI cell array
     
 end
 
-save(['ROI_',filename],'ROI');
+%% 2 - Morph polygon%
+%This is done to gradually change the polygon drawn at the first timepoint
+%to the polygon drawn in the last timepoint. Useful for cells that move or
+%rotate over the course of the movie.
+
+for num = 1:numel(frames)-1
+    
+    deltapos = (ROI{frames(num+1)}-ROI{frames(num)})/(frames(num+1)-frames(num));
+    
+    for t = frames(num)+1 : frames(num+1)-1 %apply linear transform to fill in shapes between initial and final timepoints
+        
+        ROI{t} = ROI{t-1} + deltapos;
+        
+    end
+    
+end
+
+save(['ROI_',filename,cellname],'ROI','frames');
 
 % verify that this works
 
 %{
-for i = framenumber1:framenumber2
+for i = frames(1):frames(end)
     
     im = imread( [ filename , '.tif'],i) ;
     imagesc(im); colormap gray;
