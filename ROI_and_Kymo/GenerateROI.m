@@ -6,7 +6,7 @@ close all
 filename = 'Stablized C1-rcc103_s3-1';
 cellname = '_1';
 
-frames = [1 22 37]; %these are critical frames at which you make changes to your ROI.
+frames = [1 22 37]; %Format is [initialframe , middleframes, finalframe]. These are critical frames at which you make changes to your ROI.
 framecount = 0; %keep track of how many frames we have gone through
 ROI = {}; % ROI cell will contain ROI across all timepoints
 
