@@ -93,21 +93,22 @@ end
 
 % find files starting with 'ROI' and use those to generate plots
 
-allfiles = ls;
+allfiles = dir();
+
 numROIs = 0; %number of ROIs
 plotnum = 0; %number of plots
 for ii = 1:size(allfiles,1)
 
-    if numel(allfiles)>3 %make sure number of characters in file name is large enough
+    if numel(allfiles(ii).name)>3 %make sure number of characters in file name is large enough
        
-        if strcmp( allfiles(ii,1:3) , 'ROI' )
+        if strcmp( allfiles(ii).name(1:3) , 'ROI' )
         
-            ROIfilename = allfiles(ii,:);
-            filename = allfiles(ii,5:end); %get image file name for a given ROI
+            ROIfilename = allfiles(ii).name; %Keep track of this so you can load up the ROI later.
+            filename = allfiles(ii).name(5:end); %get image file name for a given ROI
             remfrom = 'dummy'; jj = 0;
-            while ~strcmp(remfrom,'_') %removing indexing after first underscore from the right 
+            while ~strcmp(remfrom,'_') % I want to remove indexing to extract the file name. To do this, I remove the indexing. To remove indexing, I simply count backwards from the last character in the filename till I hit the first underscore, and then I remove everything that comes after the underscore. 
             jj = jj + 1;
-            remfrom = allfiles(ii,end-jj);
+            remfrom = allfiles(ii).name(end-jj);
             end
             
             filename( (end-jj) : end) = [];
