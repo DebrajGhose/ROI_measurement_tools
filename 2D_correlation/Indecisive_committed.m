@@ -2,10 +2,11 @@
 
 clear all
 close all
-filename = 'Stablized MAX_488_s1';
-cellname = '_6';
+filename = 'Stablized MAX_488_s3';
+cellname = '_3';
 
-frames = [34 55]; %Format is [initialframe , middleframes, finalframe]. These are critical frames at which you make changes to your ROI.
+frames = [ 1 27 ]; %Format is [initialframe , middleframes, finalframe]. These are critical frames at which you make changes to your ROI.
+committime = [];
 framecount = 0; %keep track of how many frames we have gone through
 ROI = {}; % ROI cell will contain ROI across all timepoints
 
@@ -61,7 +62,7 @@ for num = 1:numel(frames)-1
     
 end
 
-save(['ROI_',filename,cellname],'ROI','frames');
+save(['ROI_',filename,cellname],'ROI','frames','committime');
 
 %% 3 - Preview morphing shape if you want to
 
@@ -77,12 +78,12 @@ end
 
 %% 4 - See what cells are already marked
 
-filename = 'Stablized MAX_488_s1';
+filename = 'Stablized MAX_488_s2';
 
 im = imread( [ filename , '.tif'],1) ;
 imagesc(im); colormap gray; axis square;set(gcf, 'Position', get(0, 'Screensize'));
 
-for cc = 1:6 %number of cells quantified so far for a given file
+for cc = 1:5 %number of cells quantified so far for a given file
    
      load(['ROI_',filename,'_',num2str(cc)],'ROI','frames')
      %viewpolygon = drawpolygon([] ,'Position', ROI{frames(1)});
@@ -94,15 +95,21 @@ end
 % find files starting with 'ROI' and use those to generate plots
 
 allfiles = dir();
+allcorrels = {};
+allframes = [];
+allcommits = [];
 
 numROIs = 0; %number of ROIs
-plotnum = 0; %number of plots
 for ii = 1:size(allfiles,1)
 
     if numel(allfiles(ii).name)>3 %make sure number of characters in file name is large enough
        
         if strcmp( allfiles(ii).name(1:3) , 'ROI' )
         
+            numROIs = numROIs + 1;
+            
+            
+            
             ROIfilename = allfiles(ii).name; %Keep track of this so you can load up the ROI later.
             filename = allfiles(ii).name(5:end); %get image file name for a given ROI
             remfrom = 'dummy'; jj = 0;
@@ -112,13 +119,20 @@ for ii = 1:size(allfiles,1)
             end
             
             filename( (end-jj) : end) = [];
+            
+            if 0 %use this to apply ROI to different channel
+                cha = strfind(filename,'488');
+                filename((cha):(cha+2))='561';
+            end
+            
             disp(ROIfilename); disp(filename);
             
             %% actual analysis happens here, once you have filenames and such
             
-            load(ROIfilename,'ROI','frames');
+            load(ROIfilename);
             
             correlframes = [];
+           
             
             for ii = (frames(1)+1):frames(end)
                 
@@ -144,19 +158,59 @@ for ii = 1:size(allfiles,1)
                 %pause(0.1)
             end
             
-            
-            plotnum = plotnum + 1;
-            
-            subplot(2,6,plotnum)
+            allcorrels{numROIs} = correlframes;
+            allframes = [ allframes ; frames ];
+            allcommits = [ allcommits ; committime ];
+            %{
+            subplot(2,6,numROIs)
             
             plot(correlframes)
             hold on
             plot(movmean(correlframes,5))
             ylim([0 1]);
+            %}
+            
+            save('AllCorrelations','allcorrels','allframes','allcommits')
+            
         end
     end
 end
 
 
 
+%% 6 - Plot things with the correlations you obtained
+
+load('AllCorrelations.mat')
+
+mythreshhold = 0.8; %set a threshhold you want to put in the graph
+movingwindowaverage = 5;
+
+sgolaywindow = 5;
+sgolayorder = 1;
+
+
+for ii = 1:size(allcorrels,2)
+
+    plotthis = allcorrels{ii};
+    timeaxis = [allframes(ii,1):(allframes(ii,2)-1)];
+    
+    
+    subplot( 3,5 , ii  )
+
+    plot(timeaxis,plotthis);
+    hold on
+    plot(timeaxis,movmean(plotthis,movingwindowaverage)) %window averaging
+    
+    %plot(timeaxis,sgolayfilt(plotthis,sgolayorder,sgolaywindow)) %sgolay filtering
+    
+    
+    
+    plot([ allframes(ii,1) , (allframes(ii,2)-1) ] , [mythreshhold mythreshhold]);
+ 
+    plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]);
+    
+    
+    xlabel('Timepoints')
+    ylabel('Corrmatch')
+end
 
