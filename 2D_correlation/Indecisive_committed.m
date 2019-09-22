@@ -2,11 +2,11 @@
 
 clear all
 close all
-filename = 'Stablized MAX_488_s3';
-cellname = '_3';
+filename = 'Stablized MAX_488_s2';
+cellname = '_5';
 
-frames = [ 1 27 ]; %Format is [initialframe , middleframes, finalframe]. These are critical frames at which you make changes to your ROI.
-committime = [];
+frames = [ 1 50  ]; %Format is [initialframe , middleframes, finalframe]. These are critical frames at which you make changes to your ROI.
+committime = [47];
 framecount = 0; %keep track of how many frames we have gone through
 ROI = {}; % ROI cell will contain ROI across all timepoints
 
@@ -140,8 +140,11 @@ for ii = 1:size(allfiles,1)
                 figure
                 im1 = imread( [ filename , '.tif'] , ii-1) ;
                 imagesc(im1); colormap gray;
-                viewpolygon = drawpolygon([] ,'Position', ROI{ii});
-                BW = createMask(viewpolygon);
+                viewpolygon1 = drawpolygon([] ,'Position', ROI{ii}); % I am getting two polygons so that I can combine the ROIs from two frames
+                viewpolygon2 =  drawpolygon([] ,'Position', ROI{ii-1});
+                BW1 = createMask(viewpolygon1);
+                BW2 = createMask(viewpolygon2);
+                BW = BW1 | BW2 ; %combine ROIs of two adjacent frames
                 cellintens1 = double(im1(BW));
                 close
                 
@@ -149,8 +152,7 @@ for ii = 1:size(allfiles,1)
                 figure
                 im2 = imread( [ filename , '.tif'] , ii) ;
                 imagesc(im2); colormap gray;
-                viewpolygon = drawpolygon([] ,'Position', ROI{ii});
-                BW = createMask(viewpolygon);
+                
                 cellintens2 = double(im2(BW));
                 close
                 correlframes = [ correlframes, corr(cellintens1,cellintens2) ];
