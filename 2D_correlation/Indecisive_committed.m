@@ -210,8 +210,9 @@ for ii = 1:size(allcorrels,2)
     
     plot([ allframes(ii,1) , (allframes(ii,2)-1) ] , [mythreshhold mythreshhold]);
  
+    if ~isempty(allcommits)
     plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]);
-    
+    end
     
     xlabel('Timepoints')
     ylabel('Corrmatch')
