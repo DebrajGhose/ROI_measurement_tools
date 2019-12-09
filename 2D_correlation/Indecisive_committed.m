@@ -2,11 +2,11 @@
 
 clear all
 close all
-filename = 'Stablized MAX_488_s2';
-cellname = '_6';
+filename = 'Stablized MAX_488_s3';
+cellname = '_8';
 
-frames = [ 22 39 ]; %Format is [initialframe , middleframes, finalframe]. These are critical frames at which you make changes to your ROI.
-committime = [ 34 ];
+frames = [ 25 49 ]; %Format is [initialframe , middleframes, finalframe]. These are critical frames at which you make changes to your ROI.
+committime = [ 44 ];
 framecount = 0; %keep track of how many frames we have gone through
 ROI = {}; % ROI cell will contain ROI across all timepoints
 
@@ -83,7 +83,7 @@ filename = 'Stablized MAX_488_s3';
 im = imread( [ filename , '.tif'],1) ;
 imagesc(im); colormap gray; axis square;set(gcf, 'Position', get(0, 'Screensize'));
 
-for cc = 1:6 %number of cells quantified so far for a given file
+for cc = 1:7 %number of cells quantified so far for a given file
    
      load(['ROI_',filename,'_',num2str(cc)],'ROI','frames')
      %viewpolygon = drawpolygon([] ,'Position', ROI{frames(1)});
@@ -96,7 +96,7 @@ end
 
 allfiles = dir();
 allcorrels = {};
-allframes = [];
+allframes = {};
 allcommits = [];
 
 numROIs = 0; %number of ROIs
@@ -160,7 +160,7 @@ for ii = 1:size(allfiles,1)
             
             allcorrels{1,numROIs} = correlframes;
             allcorrels{2,numROIs} = ROIfilename;
-            allframes = [ allframes ; frames ];
+            allframes{end+1} = frames;
             allcommits = [ allcommits ; committime ];
             %{
             subplot(2,6,numROIs)
@@ -177,8 +177,6 @@ for ii = 1:size(allfiles,1)
     end
 end
 
-
-
 %% 6 - Plot things with the correlations you obtained
 
 load('AllCorrelations.mat')
@@ -193,7 +191,7 @@ sgolayorder = 1;
 for ii = 1:size(allcorrels,2)
 
     plotthis = allcorrels{1,ii};
-    timeaxis = [allframes(ii,1):(allframes(ii,2)-1)];
+    timeaxis = [ allframes{ii}(1):(allframes{ii}.(numel(allframes{ii}))-1) ];
     
     
     subplot( 4,5 , ii  )
@@ -206,15 +204,16 @@ for ii = 1:size(allcorrels,2)
     
     %plot(timeaxis,sgolayfilt(plotthis,sgolayorder,sgolaywindow)) %sgolay filtering
     
-    
-    
-    plot([ allframes(ii,1) , (allframes(ii,2)-1) ] , [mythreshhold mythreshhold]);
+   plot([ allframes{ii}(1) , (allframes{ii}.(numel(allframes{ii}))-1) ] , [mythreshhold mythreshhold]);
  
-    if ~isempty(allcommits)
+     if ~isempty(allcommits)
     plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]);
     end
     
+    
     xlabel('Timepoints')
     ylabel('Corrmatch')
+    
+    %axis square
 end
 
