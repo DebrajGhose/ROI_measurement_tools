@@ -159,7 +159,7 @@ for ii = 1:size(allfiles,1)
             end
             
             allcorrels{1,numROIs} = correlframes;
-            allcorrels{2,numROIs} = ROIfilename;
+            allcorrels{2,numROIs} = ROIfilename; %store file name here for recall later
             allframes{end+1} = frames;
             allcommits = [ allcommits ; committime ];
             %{
@@ -177,7 +177,82 @@ for ii = 1:size(allfiles,1)
     end
 end
 
-%% 6 - Plot things with the correlations you obtained
+%% 6 - Calculate CV (use this for the MAPK channel)
+
+%use this to calculate CV of signal in the cell for each time point
+
+allfiles = dir();
+allcvs = {};
+allframes = {};
+
+numROIs = 0; %number of ROIs
+for ii = 1:size(allfiles,1)
+
+    if numel(allfiles(ii).name)>3 %make sure number of characters in file name is large enough
+       
+        if strcmp( allfiles(ii).name(1:3) , 'ROI' )
+        
+            numROIs = numROIs + 1;
+            
+            ROIfilename = allfiles(ii).name; %Keep track of this so you can load up the ROI later.
+            filename = allfiles(ii).name(5:end); %get image file name for a given ROI
+            remfrom = 'dummy'; jj = 0;
+            while ~strcmp(remfrom,'_') % I want to remove indexing to extract the file name. To do this, I remove the indexing. To remove indexing, I simply count backwards from the last character in the filename till I hit the first underscore, and then I remove everything that comes after the underscore. 
+            jj = jj + 1;
+            remfrom = allfiles(ii).name(end-jj);
+            end
+            
+            filename( (end-jj) : end) = []; %extract filename of the TIF file you want to open
+            
+            if 1 %use this to apply ROI to different channel
+                cha = strfind(filename,'488');
+                filename((cha):(cha+2))='561';
+            end
+            
+            disp(ROIfilename); disp(filename);
+            
+           %% actual analysis happens here, once you have filenames and such
+            
+            load(ROIfilename);
+            
+            cvframes = [];
+           
+            for ii = frames(1):frames(end)
+               
+                figure
+                im2 = imread( [ filename , '.tif'] , ii) ;
+                imagesc(im2); colormap gray;
+                viewpolygon = drawpolygon([] ,'Position', ROI{ii});
+                BW = createMask(viewpolygon);
+                cellintense = double(im2(BW));
+                close
+                cvframes = [ cvframes, std(cellintense(:))/mean(cellintense(:))  ];
+                
+                %pause(0.1)
+            end
+            
+            allcvs{1,numROIs} = cvframes;
+            allcvs{2,numROIs} = ROIfilename; %store file name here for recall later
+            allframes{end+1} = frames;
+            %{
+            subplot(2,6,numROIs)
+            
+            plot(correlframes)
+            hold on
+            plot(movmean(correlframes,5))
+            ylim([0 1]);
+            %}
+            
+            save('AllCVs','allcvs','allframes')
+            
+        end
+    end
+end
+
+
+%% 7 - Plot things with the correlations you obtained
+
+figure
 
 load('AllCorrelations.mat')
 
@@ -192,7 +267,6 @@ for ii = 1:size(allcorrels,2)
 
     plotthis = allcorrels{1,ii};
     timeaxis = [ allframes{ii}(1):(allframes{ii}(numel(allframes{ii}))-1) ];
-    
     
     subplot( 4,5 , ii  )
 
@@ -213,6 +287,41 @@ for ii = 1:size(allcorrels,2)
     
     xlabel('Timepoints')
     ylabel('Corrmatch')
+    
+    %axis square
+end
+
+
+%% 8 - Plot CV data
+
+figure
+
+load('AllCVs.mat')
+
+
+for ii = 1:size(allcvs,2)
+
+    plotthis = allcvs{1,ii};
+    timeaxis = [ allframes{ii}(1):allframes{ii}(numel(allframes{ii})) ];
+    
+    subplot( 4,5 , ii  )
+
+    plot(timeaxis,plotthis);
+    hold on
+    plot(timeaxis,movmean(plotthis,movingwindowaverage)) %window averaging
+    
+    title(allcvs{2,ii},'Interpreter','Latex')
+    
+    %plot(timeaxis,sgolayfilt(plotthis,sgolayorder,sgolaywindow)) %sgolay filtering
+    
+    plot([ allframes{ii}(1) , allframes{ii}(numel(allframes{ii})) ] , [mythreshhold mythreshhold]);
+ 
+     if ~isempty(allcommits)
+    plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]);
+    end
+    
+    xlabel('Timepoints')
+    ylabel('CVs')
     
     %axis square
 end
