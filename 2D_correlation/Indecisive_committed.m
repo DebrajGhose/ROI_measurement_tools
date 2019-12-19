@@ -191,7 +191,7 @@ sgolayorder = 1;
 for ii = 1:size(allcorrels,2)
 
     plotthis = allcorrels{1,ii};
-    timeaxis = [ allframes{ii}(1):(allframes{ii}.(numel(allframes{ii}))-1) ];
+    timeaxis = [ allframes{ii}(1):(allframes{ii}(numel(allframes{ii}))-1) ];
     
     
     subplot( 4,5 , ii  )
@@ -204,7 +204,7 @@ for ii = 1:size(allcorrels,2)
     
     %plot(timeaxis,sgolayfilt(plotthis,sgolayorder,sgolaywindow)) %sgolay filtering
     
-   plot([ allframes{ii}(1) , (allframes{ii}.(numel(allframes{ii}))-1) ] , [mythreshhold mythreshhold]);
+   plot([ allframes{ii}(1) , (allframes{ii}(numel(allframes{ii}))-1) ] , [mythreshhold mythreshhold]);
  
      if ~isempty(allcommits)
     plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]);
@@ -216,4 +216,3 @@ for ii = 1:size(allcorrels,2)
     
     %axis square
 end
-
