@@ -2,7 +2,7 @@
 
 clear all
 close all
-filename = 'Stablized MAX_488_s3';
+filename = 'Stablized MAX_488_s1';
 cellname = '_8';
 
 frames = [ 25 49 ]; %Format is [initialframe , middleframes, finalframe]. These are critical frames at which you make changes to your ROI.
@@ -66,12 +66,24 @@ save(['ROI_',filename,cellname],'ROI','frames','committime');
 
 %% 3 - Preview morphing shape if you want to
 
+maxx = 1; minx = 10000; maxy = 1; miny = 10000;
+
+for ii = frames(1):frames(end)
+    
+    
+    maxx = max(maxx,max(ROI{ii}(:,1))); minx = min(minx,min(ROI{ii}(:,1)));
+    
+    maxy = max( maxy , max(ROI{ii}(:,2))); miny = min(miny,min(ROI{ii}(:,2)));
+    
+end
+
 for ii = frames(1):frames(end)
     
     im = imread( [ filename , '.tif'],ii) ;
     imagesc(im); colormap gray;axis square;
-    
+    axis([minx maxx miny maxy]);
     viewpolygon = drawpolygon([] ,'Position', ROI{ii});
+    
     pause(0.1)
     
 end
