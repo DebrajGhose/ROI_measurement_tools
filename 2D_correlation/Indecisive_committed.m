@@ -303,6 +303,7 @@ for ii = 1:size(allcorrels,2)
     %axis square
 end
 
+legend('Raw',['Smoothed (',num2str(movingwindowaverage) , ')']);
 
 %% 8 - Plot CV data
 
@@ -310,6 +311,10 @@ figure
 
 load('AllCVs.mat')
 
+movingwindowaverage = 5;
+
+sgolaywindow = 5;
+sgolayorder = 1;
 
 for ii = 1:size(allcvs,2)
 
@@ -320,20 +325,26 @@ for ii = 1:size(allcvs,2)
 
     plot(timeaxis,plotthis);
     hold on
-    plot(timeaxis,movmean(plotthis,movingwindowaverage)) %window averaging
+    windowmean = movmean(plotthis,movingwindowaverage);
+    plot(timeaxis,windowmean) %window averaging
+    
+    plot(timeaxis(2:end) , diff(windowmean));
+    
+    windowstd = movstd(plotthis,movingwindowaverage);
+    plot(timeaxis,windowstd) %window averaging
+   
+    plot(timeaxis(2:end) , diff(windowstd));
     
     title(allcvs{2,ii},'Interpreter','Latex')
     
     %plot(timeaxis,sgolayfilt(plotthis,sgolayorder,sgolaywindow)) %sgolay filtering
-    
-    plot([ allframes{ii}(1) , allframes{ii}(numel(allframes{ii})) ] , [mythreshhold mythreshhold]);
  
-     if ~isempty(allcommits)
-    plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]);
-    end
     
     xlabel('Timepoints')
     ylabel('CVs')
     
     %axis square
 end
+
+
+legend('Raw',['Smoothed (',num2str(movingwindowaverage) , ')'],'Diff(mean)' , 'Std' , 'Diff(std)');
