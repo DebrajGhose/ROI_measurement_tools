@@ -311,40 +311,67 @@ figure
 
 load('AllCVs.mat')
 
-movingwindowaverage = 5;
 
-sgolaywindow = 5;
-sgolayorder = 1;
+movingwindowaverage = 6;
+meanthresh = 0.005; stdthresh = -0.005;
+cutout = 5;  %data points you want to throw out; you want to ignore the intial signal right after cytokinesis. So, find the max and remove 5 timepoints from there.
+
 
 for ii = 1:size(allcvs,2)
 
     plotthis = allcvs{1,ii};
     timeaxis = [ allframes{ii}(1):allframes{ii}(numel(allframes{ii})) ];
     
-    subplot( 4,5 , ii  )
+    [plotthis,committime,timeaxis] = cleanmaxcutnormalize(plotthis,committime,timeaxis,cutout); %normalize and flip signal, cut out 5 timepoints after the peak MAPK activity 
+    
+    
+    subplot( 4,5 , 2*ii  )
 
-    plot(timeaxis,plotthis);
+    plot(timeaxis,plotthis); %plot signal
     hold on
-    windowmean = movmean(plotthis,movingwindowaverage);
-    plot(timeaxis,windowmean) %window averaging
-    
-    plot(timeaxis(2:end) , diff(windowmean));
-    
+    windowmean = movmean(plotthis,movingwindowaverage); %smooth signal
     windowstd = movstd(plotthis,movingwindowaverage);
+    
+    plot(timeaxis,windowmean) %window averaging
     plot(timeaxis,windowstd) %window averaging
-   
-    plot(timeaxis(2:end) , diff(windowstd));
     
     title(allcvs{2,ii},'Interpreter','Latex')
     
     %plot(timeaxis,sgolayfilt(plotthis,sgolayorder,sgolaywindow)) %sgolay filtering
- 
     
     xlabel('Timepoints')
     ylabel('CVs')
+    
+    subplot(4,5,2*ii)
+    
+    slopemean = diff(windowmean); % find slopes for mean and std
+    slopestd = diff(windowstd);
+    
+    plot(timeaxis(2:end) , slopemean ); % plot slope of mean and std
+    plot(timeaxis(2:end) , slopestd );
+    
+    binslopemean = (slopemean>meanthresh); %find when mean and std cross threshhold
+    binslopestd = (slopestd<stdthresh);
+    
+    andslopes = binslopemean & binslopestd;
+    plot(andslopes*0.03,'k','LineWidth',2); %plot flag
     
     %axis square
 end
 
 
 legend('Raw',['Smoothed (',num2str(movingwindowaverage) , ')'],'Diff(mean)' , 'Std' , 'Diff(std)');
+
+
+function [mycellspro,committime,timeaxis] = cleanmaxcutnormalize(mycellspro,committime,timeaxis,cutout)
+
+[M,I] = max(mycellspro);
+
+normcell = 1 - mycellspro/M; %normalize matrix by dividing by max and then flip by subtracting from 1
+
+mycellspro = normcell((I+cutout):end); %copy normalized and cut data into new matrix
+committime(cc) = committime((I+cutout):end);
+
+
+
+end
