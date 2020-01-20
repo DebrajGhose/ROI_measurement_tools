@@ -2,11 +2,11 @@
 
 clear all
 close all
-filename = 'Stablized MAX_488_s1';
-cellname = '_8';
+filename = 'MAX_rcc218_488_s4';
+cellname = '_1';
 
-frames = [ 25 49 ]; %Format is [initialframe , middleframes, finalframe]. These are critical frames at which you make changes to your ROI.
-committime = [ 44 ];
+frames = [ 1 30 ]; %Format is [initialframe , middleframes, finalframe]. These are critical frames at which you make changes to your ROI.
+committime = [ 15 ];
 framecount = 0; %keep track of how many frames we have gone through
 ROI = {}; % ROI cell will contain ROI across all timepoints
 
@@ -90,7 +90,7 @@ end
 
 %% 4 - See what cells are already marked
 
-filename = 'Stablized MAX_488_s3';
+filename = 'MAX_rcc218_488_s4';
 
 im = imread( [ filename , '.tif'],1) ;
 imagesc(im); colormap gray; axis square;set(gcf, 'Position', get(0, 'Screensize'));
@@ -274,14 +274,15 @@ movingwindowaverage = 5;
 sgolaywindow = 5;
 sgolayorder = 1;
 
-
 for ii = 1:size(allcorrels,2)
 
     plotthis = allcorrels{1,ii};
     timeaxis = [ allframes{ii}(1):(allframes{ii}(numel(allframes{ii}))-1) ];
     
-    subplot( 4,5 , ii  )
+    subplot( 4 , 5 , ii  )
 
+    %plotthis = (plotthis - min(plotthis))/(max(plotthis - min(plotthis)));
+    
     plot(timeaxis,plotthis);
     hold on
     plot(timeaxis,movmean(plotthis,movingwindowaverage)) %window averaging
@@ -290,12 +291,11 @@ for ii = 1:size(allcorrels,2)
     
     %plot(timeaxis,sgolayfilt(plotthis,sgolayorder,sgolaywindow)) %sgolay filtering
     
-   plot([ allframes{ii}(1) , (allframes{ii}(numel(allframes{ii}))-1) ] , [mythreshhold mythreshhold]);
- 
-     if ~isempty(allcommits)
-    plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]);
-    end
+    plot([ allframes{ii}(1) , (allframes{ii}(numel(allframes{ii}))-1) ] , [mythreshhold mythreshhold]);
     
+    if ~isempty(allcommits)
+        plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]);
+    end
     
     xlabel('Timepoints')
     ylabel('Corrmatch')
@@ -305,12 +305,54 @@ end
 
 legend('Raw',['Smoothed (',num2str(movingwindowaverage) , ')']);
 
+%% 7.5 - Look for false positives and false negatives
+
+clear all
+
+load('AllCorrelations.mat')
+movingwindowaverage = 5;
+
+
+falseposterr = 2; % range over which you can forgive a false positive
+
+for thshhold =  [0:0.05:1] %this is the threshhold that you will use to find both false postives and false negatives
+    
+    falseneg = 0;
+    falsepos = 0;
+    
+    for ii = 1:size(allcorrels,2)
+        
+        coi = allcorrels{1,ii}; %correlation of interest
+        meancoi = movmean(coi,movingwindowaverage);
+        timeaxis = [ allframes{ii}(1):(allframes{ii}(numel(allframes{ii}))-1) ];
+        
+        if max(meancoi(:)) < thshhold, falseneg = falseneg + 1; end %calculate if false negative or not
+        
+        firstcross = find(meancoi>thshhold,1); %find first element that goes over the thresshold
+        firstcross = timeaxis(1) + firstcross-1; %adjust based on first timepoint
+        
+        if firstcross < (allcommits(ii) - falseposterr), falsepos = falsepos + 1; end
+        
+    end
+    
+    hold on
+    
+    plot(thshhold,size(allcorrels,2) - falseneg,'r.') %plot total - false negative
+    plot(thshhold,falsepos,'b.')
+    
+end
+
+legend('Total-Falseneg','Falsepos')
+
+xlabel('Threshhold'); ylabel('Count')
+
+
 %% 8 - Plot CV data
 
 figure
 
+load('AllCorrelations.mat','allcommits')
 load('AllCVs.mat')
-
 
 movingwindowaverage = 6;
 meanthresh = 0.005; stdthresh = -0.005;
@@ -320,20 +362,21 @@ cutout = 5;  %data points you want to throw out; you want to ignore the intial s
 for ii = 1:size(allcvs,2)
 
     plotthis = allcvs{1,ii};
+    committime = allcommits(ii);
     timeaxis = [ allframes{ii}(1):allframes{ii}(numel(allframes{ii})) ];
     
     [plotthis,committime,timeaxis] = cleanmaxcutnormalize(plotthis,committime,timeaxis,cutout); %normalize and flip signal, cut out 5 timepoints after the peak MAPK activity 
     
     
-    subplot( 4,5 , 2*ii  )
+    subplot( 4,5 , 2*ii-1 ) %plot the processed signal
 
-    plot(timeaxis,plotthis); %plot signal
+    plot(timeaxis,plotthis,'g'); %plot signal
     hold on
     windowmean = movmean(plotthis,movingwindowaverage); %smooth signal
     windowstd = movstd(plotthis,movingwindowaverage);
     
-    plot(timeaxis,windowmean) %window averaging
-    plot(timeaxis,windowstd) %window averaging
+    plot(timeaxis,windowmean,'r') %window averaging
+    plot(timeaxis,windowstd,'b') %window averaging
     
     title(allcvs{2,ii},'Interpreter','Latex')
     
@@ -342,26 +385,41 @@ for ii = 1:size(allcvs,2)
     xlabel('Timepoints')
     ylabel('CVs')
     
-    subplot(4,5,2*ii)
-    
+    subplot(4,5,2*ii) %plot the rate of change and flag calls
+    hold on
     slopemean = diff(windowmean); % find slopes for mean and std
     slopestd = diff(windowstd);
     
-    plot(timeaxis(2:end) , slopemean ); % plot slope of mean and std
-    plot(timeaxis(2:end) , slopestd );
+    plot(timeaxis(2:end) , slopemean , 'r'  ); % plot slope of mean and std
+    plot(timeaxis(2:end) , slopestd , 'b' );
     
     binslopemean = (slopemean>meanthresh); %find when mean and std cross threshhold
     binslopestd = (slopestd<stdthresh);
     
     andslopes = binslopemean & binslopestd;
-    plot(andslopes*0.03,'k','LineWidth',2); %plot flag
+    plot(timeaxis(2:end),andslopes*0.03,'k','LineWidth', 2); %plot flag
+    
+    if ~isempty(allcommits)
+    plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]*0.03,'c');
+    
+    end
     
     %axis square
 end
 
+  subplot( 4,5 , 2*ii-1 ) %plot the processed signal
 
-legend('Raw',['Smoothed (',num2str(movingwindowaverage) , ')'],'Diff(mean)' , 'Std' , 'Diff(std)');
+legend('Raw',['Smoothed (',num2str(movingwindowaverage) , ')'], 'Std' );
 
+
+
+  subplot( 4,5 , 2*ii ) %plot the processed signal
+
+legend('Diff(mean)' , 'Diff(std)' , 'Flag');
+
+
+
+%% Function to process raw CV data
 
 function [mycellspro,committime,timeaxis] = cleanmaxcutnormalize(mycellspro,committime,timeaxis,cutout)
 
@@ -370,7 +428,12 @@ function [mycellspro,committime,timeaxis] = cleanmaxcutnormalize(mycellspro,comm
 normcell = 1 - mycellspro/M; %normalize matrix by dividing by max and then flip by subtracting from 1
 
 mycellspro = normcell((I+cutout):end); %copy normalized and cut data into new matrix
-committime(cc) = committime((I+cutout):end);
+
+timeaxis = timeaxis((I+cutout):end);
+
+
+
+committime = committime((I+cutout):end);
 
 
 
