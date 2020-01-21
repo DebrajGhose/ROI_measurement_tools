@@ -312,7 +312,6 @@ clear all
 load('AllCorrelations.mat')
 movingwindowaverage = 5;
 
-
 falseposterr = 2; % range over which you can forgive a false positive
 
 for thshhold =  [0:0.05:1] %this is the threshhold that you will use to find both false postives and false negatives
@@ -337,15 +336,14 @@ for thshhold =  [0:0.05:1] %this is the threshhold that you will use to find bot
     
     hold on
     
-    plot(thshhold,size(allcorrels,2) - falseneg,'r.') %plot total - false negative
+    plot(thshhold,falseneg,'r.') %plot total - false negative
     plot(thshhold,falsepos,'b.')
     
 end
 
-legend('Total-Falseneg','Falsepos')
+legend('Falseneg','Falsepos')
 
 xlabel('Threshhold'); ylabel('Count')
-
 
 %% 8 - Plot CV data
 
