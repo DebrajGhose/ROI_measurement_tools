@@ -279,7 +279,7 @@ for ii = 1:size(allcorrels,2)
     plotthis = allcorrels{1,ii};
     timeaxis = [ allframes{ii}(1):(allframes{ii}(numel(allframes{ii}))-1) ];
     
-    subplot( 4 , 5 , ii  )
+    subplot( 5 , 10 , ii  )
 
     %plotthis = (plotthis - min(plotthis))/(max(plotthis - min(plotthis)));
     
@@ -312,9 +312,10 @@ clear all
 load('AllCorrelations.mat')
 movingwindowaverage = 5;
 
+
 falseposterr = 2; % range over which you can forgive a false positive
 
-for thshhold =  [0:0.05:1] %this is the threshhold that you will use to find both false postives and false negatives
+for thshhold =  [0:0.01:1] %this is the threshhold that you will use to find both false postives and false negatives
     
     falseneg = 0;
     falsepos = 0;
@@ -345,6 +346,7 @@ legend('Falseneg','Falsepos')
 
 xlabel('Threshhold'); ylabel('Count')
 
+
 %% 8 - Plot CV data
 
 figure
@@ -366,7 +368,7 @@ for ii = 1:size(allcvs,2)
     [plotthis,committime,timeaxis] = cleanmaxcutnormalize(plotthis,committime,timeaxis,cutout); %normalize and flip signal, cut out 5 timepoints after the peak MAPK activity 
     
     
-    subplot( 4,5 , 2*ii-1 ) %plot the processed signal
+    subplot( 5 , 10 , 2*ii-1 ) %plot the processed signal
 
     plot(timeaxis,plotthis,'g'); %plot signal
     hold on
@@ -383,7 +385,7 @@ for ii = 1:size(allcvs,2)
     xlabel('Timepoints')
     ylabel('CVs')
     
-    subplot(4,5,2*ii) %plot the rate of change and flag calls
+    subplot( 5 , 10 ,2*ii) %plot the rate of change and flag calls
     hold on
     slopemean = diff(windowmean); % find slopes for mean and std
     slopestd = diff(windowstd);
@@ -405,13 +407,13 @@ for ii = 1:size(allcvs,2)
     %axis square
 end
 
-  subplot( 4,5 , 2*ii-1 ) %plot the processed signal
+  subplot( 5 , 10 , 2*ii-1 ) %plot the processed signal
 
 legend('Raw',['Smoothed (',num2str(movingwindowaverage) , ')'], 'Std' );
 
 
 
-  subplot( 4,5 , 2*ii ) %plot the processed signal
+  subplot( 5 , 10 , 2*ii ) %plot the processed signal
 
 legend('Diff(mean)' , 'Diff(std)' , 'Flag');
 
