@@ -9,6 +9,7 @@ frames = [ 1 30 ]; %Format is [initialframe , middleframes, finalframe]. These a
 committime = [ 15 ];
 framecount = 0; %keep track of how many frames we have gone through
 ROI = {}; % ROI cell will contain ROI across all timepoints
+intensitylimits = [100 500]; %set up intensity limits. If you want auto calibration, make it [ -Inf Inf ]
 
 %% 1 Create ROIs
 
@@ -17,7 +18,8 @@ for num=frames
     
     close all
     im = imread( [ filename , '.tif'],num) ;
-    imagesc(im); colormap gray; axis square;set(gcf, 'Position', get(0, 'Screensize'));
+    imagesc(im , intensitylimits ); colormap gray; axis square;set(gcf, 'Position', get(0, 'Screensize'));
+    
     axis square
     if framecount == 1 %for first frame, simply create a polygon
         el = drawpolygon;
