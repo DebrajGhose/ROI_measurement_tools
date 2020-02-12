@@ -307,6 +307,8 @@ end
 
 legend('Raw',['Smoothed (',num2str(movingwindowaverage) , ')']);
 
+set(gcf, 'Renderer', 'Painters' );
+
 %% 7.5 - Look for false positives and false negatives
 
 clear all
@@ -348,6 +350,7 @@ legend('Falseneg','Falsepos')
 
 xlabel('Threshhold'); ylabel('Count')
 
+set(gcf, 'Renderer', 'Painters' );
 
 %% 8 - Plot CV data
 
@@ -421,7 +424,7 @@ legend('Raw',['Smoothed (',num2str(movingwindowaverage) , ')'], 'Std' );
 
 legend('Diff(mean)' , 'Diff(std)' , 'Flag');
 
-
+set(gcf, 'Renderer', 'Painters' );
 
 %% Function to process raw CV data
 
