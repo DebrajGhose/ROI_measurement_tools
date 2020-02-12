@@ -356,7 +356,7 @@ figure
 load('AllCorrelations.mat','allcommits')
 load('AllCVs.mat')
 
-movingwindowaverage = 6;
+movingwindowaverage = 5;
 meanthresh = 0.005; stdthresh = -0.005;
 cutout = 5;  %data points you want to throw out; you want to ignore the intial signal right after cytokinesis. So, find the max and remove 5 timepoints from there.
 
@@ -371,7 +371,7 @@ for ii = 1:size(allcvs,2)
     
     
     subplot( 5 , 10 , 2*ii-1 ) %plot the processed signal
-
+    
     plot(timeaxis,plotthis,'g'); %plot signal
     hold on
     windowmean = movmean(plotthis,movingwindowaverage); %smooth signal
@@ -379,6 +379,8 @@ for ii = 1:size(allcvs,2)
     
     plot(timeaxis,windowmean,'r') %window averaging
     plot(timeaxis,windowstd,'b') %window averaging
+    
+    if ~isempty(allcommits), plot([ allcommits(ii) allcommits(ii)  ],[ 0 0.4 ],'m'); end %mark commitment point
     
     title(allcvs{2,ii},'Interpreter','Latex')
     
@@ -392,17 +394,17 @@ for ii = 1:size(allcvs,2)
     slopemean = diff(windowmean); % find slopes for mean and std
     slopestd = diff(windowstd);
     
-    plot(timeaxis(2:end) , slopemean , 'r'  ); % plot slope of mean and std
-    plot(timeaxis(2:end) , slopestd , 'b' );
+    plot(timeaxis(1:(end-1)) , slopemean , 'r'  ); % plot slope of mean and std
+    plot(timeaxis(1:(end-1)) , slopestd , 'b' );
     
     binslopemean = (slopemean>meanthresh); %find when mean and std cross threshhold
     binslopestd = (slopestd<stdthresh);
     
     andslopes = binslopemean & binslopestd;
-    plot(timeaxis(2:end),andslopes*0.03,'k','LineWidth', 2); %plot flag
+    plot(timeaxis(1:(end-1)),andslopes*0.03,'k','LineWidth', 2); %plot flag
     
     if ~isempty(allcommits)
-    plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]*0.03,'c');
+    plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]*0.03,'m');
     
     end
     
