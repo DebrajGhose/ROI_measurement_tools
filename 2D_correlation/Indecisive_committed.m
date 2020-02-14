@@ -175,6 +175,7 @@ for ii = 1:size(allfiles,1)
             allcorrels{1,numROIs} = correlframes;
             allcorrels{2,numROIs} = ROIfilename; %store file name here for recall later
             allframes{end+1} = frames;
+            if isempty(committime), committime = Inf; end
             allcommits = [ allcommits ; committime ];
             %{
             subplot(2,6,numROIs)
