@@ -175,7 +175,6 @@ for ii = 1:size(allfiles,1)
             allcorrels{1,numROIs} = correlframes;
             allcorrels{2,numROIs} = ROIfilename; %store file name here for recall later
             allframes{end+1} = frames;
-            if isempty(committime), committime = Inf; end
             allcommits = [ allcommits ; committime ];
             %{
             subplot(2,6,numROIs)
@@ -355,8 +354,6 @@ set(gcf, 'Renderer', 'Painters' );
 
 %% 8 - Plot CV data
 
-figure
-
 load('AllCorrelations.mat','allcommits')
 load('AllCVs.mat')
 
@@ -364,6 +361,25 @@ movingwindowaverage = 5;
 meanthresh = 0.005; stdthresh = -0.005;
 cutout = 5;  %data points you want to throw out; you want to ignore the intial signal right after cytokinesis. So, find the max and remove 5 timepoints from there.
 
+figure %plot unprocessed data
+
+for ii = 1:size(allcvs,2)
+    
+    plotthis = allcvs{1,ii};
+    committime = allcommits(ii);
+    timeaxis = [ allframes{ii}(1):allframes{ii}(numel(allframes{ii})) ];
+    
+    subplot( 5 , 10 , 2*ii-1 ) %plot the unprocessed signal
+    
+    plot(timeaxis,plotthis)
+    title(allcvs{2,ii},'Interpreter','Latex')
+    
+    xlabel('Timepoint'); ylabel('CV');
+    
+end
+ legend('CV');
+
+figure %plot processed data
 
 for ii = 1:size(allcvs,2)
 
