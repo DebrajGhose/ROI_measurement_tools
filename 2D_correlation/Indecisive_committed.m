@@ -276,12 +276,14 @@ movingwindowaverage = 5;
 sgolaywindow = 5;
 sgolayorder = 1;
 
+timeinterval = 2;
+
 for ii = 1:size(allcorrels,2)
 
     plotthis = allcorrels{1,ii};
-    timeaxis = [ allframes{ii}(1):(allframes{ii}(numel(allframes{ii}))-1) ];
+    timeaxis = [ allframes{ii}(1):(allframes{ii}(numel(allframes{ii}))-1) ]*timeinterval;
     
-    adjustby = timeaxis(1); %how much you want to adjust timeaxis by
+    adjustby = timeaxis(1) - timeinterval; %how much you want to adjust timeaxis by
     
     subplot( 5 , 10 , ii  )
 
@@ -302,21 +304,20 @@ for ii = 1:size(allcorrels,2)
     plot([ 0 80 ] , [mythreshhold mythreshhold]);
     
     if ~isempty(allcommits) && max(meanplotthis)>mythreshhold  %plot commit by eye
-        plot([ allcommits(ii)-adjustby ,  allcommits(ii)-adjustby  ],[ 0 1 ]);
+        plot([ allcommits(ii)*timeinterval-adjustby ,  allcommits(ii)*timeinterval-adjustby  ],[ 0 1 ]);
         
-        codecommit = find(meanplotthis>mythreshhold,1) - 1; %find commit by code. The -1 is to make it 0 indexed
+        codecommit = (find(meanplotthis>mythreshhold,1) - 1)*timeinterval; %find commit by code. The -1 is to make it 0 indexed
         
-        diffincall = abs((allcommits(ii)-adjustby) - (codecommit)); %difference between calling by eye vs code
+        diffincall = abs((allcommits(ii)*timeinterval-adjustby) - (codecommit)); %difference between calling by eye vs code
         
-        text(50 , 0.5 , [ 'Diff:', num2str(diffincall)] , 'Color' , [0 0.3 0.1] , 'FontSize', 10 )
+        text(50 , 0.5 , [ 'Diff:', num2str(diffincall) , ' min']  , 'Color' , [0 0.3 0.1] , 'FontSize', 10 )
         
     end
     
-    xlabel('Timepoints')
-    ylabel('Corrmatch')
+    xlabel('Time (minutes)')
+    ylabel('Correlation')
     
    
-    
     ylim([0 1]);
     xlim([0 80]);
     
