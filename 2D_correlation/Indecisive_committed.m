@@ -301,18 +301,21 @@ for ii = 1:size(allcorrels,2)
     
     plot([ 0 80 ] , [mythreshhold mythreshhold]);
     
-    if ~isempty(allcommits) %plot commit by eye
+    if ~isempty(allcommits) && max(meanplotthis)>mythreshhold  %plot commit by eye
         plot([ allcommits(ii)-adjustby ,  allcommits(ii)-adjustby  ],[ 0 1 ]);
+        
+        codecommit = find(meanplotthis>mythreshhold,1) - 1; %find commit by code. The -1 is to make it 0 indexed
+        
+        diffincall = abs((allcommits(ii)-adjustby) - (codecommit)); %difference between calling by eye vs code
+        
+        text(50 , 0.5 , [ 'Diff:', num2str(diffincall)] , 'Color' , [0 0.3 0.1] , 'FontSize', 10 )
+        
     end
-    
-    codecommit = find(meanplotthis>mythreshhold,1) - 1; %find commit by code. The -1 is to make it 0 indexed
-    
-    diffincall = abs((allcommits(ii)-adjustby) - (codecommit)); %difference between calling by eye vs code
     
     xlabel('Timepoints')
     ylabel('Corrmatch')
     
-    text(50 , 0.5 , [ 'Diff:', num2str(diffincall)] , 'Color' , [0 0.3 0.1] , 'FontSize', 10 )
+   
     
     ylim([0 1]);
     xlim([0 80]);
