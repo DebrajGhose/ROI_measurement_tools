@@ -281,28 +281,43 @@ for ii = 1:size(allcorrels,2)
     plotthis = allcorrels{1,ii};
     timeaxis = [ allframes{ii}(1):(allframes{ii}(numel(allframes{ii}))-1) ];
     
+    adjustby = timeaxis(1); %how much you want to adjust timeaxis by
+    
     subplot( 5 , 10 , ii  )
 
     %plotthis = (plotthis - min(plotthis))/(max(plotthis - min(plotthis)));
     
-    plot(timeaxis,plotthis);
-    hold on
-    plot(timeaxis,movmean(plotthis,movingwindowaverage)) %window averaging
+    plot(timeaxis-adjustby,plotthis); %make time start at 0
     
-    title(allcorrels{2,ii},'Interpreter','Latex')
+    hold on
+    
+    meanplotthis = movmean(plotthis,movingwindowaverage); %find mean trace by window averaging
+    
+    plot(timeaxis-adjustby,meanplotthis) %window averaging
+    
+    title(allcorrels{2,ii} ,'Interpreter','Latex','FontSize', 6 , 'Color' , [0 0.2 0.1])
     
     %plot(timeaxis,sgolayfilt(plotthis,sgolayorder,sgolaywindow)) %sgolay filtering
     
-    plot([ allframes{ii}(1) , (allframes{ii}(numel(allframes{ii}))-1) ] , [mythreshhold mythreshhold]);
+    plot([ 0 80 ] , [mythreshhold mythreshhold]);
     
-    if ~isempty(allcommits)
-        plot([ allcommits(ii) allcommits(ii)  ],[ 0 1 ]);
+    if ~isempty(allcommits) %plot commit by eye
+        plot([ allcommits(ii)-adjustby ,  allcommits(ii)-adjustby  ],[ 0 1 ]);
     end
+    
+    codecommit = find(meanplotthis>mythreshhold,1) - 1; %find commit by code. The -1 is to make it 0 indexed
+    
+    diffincall = abs((allcommits(ii)-adjustby) - (codecommit)); %difference between calling by eye vs code
     
     xlabel('Timepoints')
     ylabel('Corrmatch')
     
-    %axis square
+    text(50 , 0.5 , [ 'Diff:', num2str(diffincall)] , 'Color' , [0 0.3 0.1] , 'FontSize', 10 )
+    
+    ylim([0 1]);
+    xlim([0 80]);
+    
+    axis square
 end
 
 legend('Raw',['Smoothed (',num2str(movingwindowaverage) , ')']);
