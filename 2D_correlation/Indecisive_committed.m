@@ -303,10 +303,17 @@ for ii = 1:size(allcorrels,2)
     
     plot([ 0 80 ] , [mythreshhold mythreshhold]);
     
-    if ~isempty(allcommits) && max(meanplotthis)>mythreshhold  %plot commit by eye
+    if ~isempty(allcommits) % plot manually called commit time by eye
+        
         plot([ allcommits(ii)*timeinterval-adjustby ,  allcommits(ii)*timeinterval-adjustby  ],[ 0 1 ]);
         
+    end
+    
+    if ~isempty(allcommits) && max(meanplotthis)>mythreshhold  %calculate difference between manually called commit and commit called by code
+        
         codecommit = (find(meanplotthis>mythreshhold,1) - 1)*timeinterval; %find commit by code. The -1 is to make it 0 indexed
+        
+        plot([ codecommit ,  codecommit  ],[ 0 1 ] , '--');
         
         diffincall = abs((allcommits(ii)*timeinterval-adjustby) - (codecommit)); %difference between calling by eye vs code
         
