@@ -344,7 +344,7 @@ for threshold = testhresholds
             ylabel('Correlation')
             
             ylim([0 1]);
-            xlim([-Inf 80]);
+            xlim([0 85]);
             
             axis square
             
