@@ -266,86 +266,25 @@ end
 
 %% 7 - Plot things with the correlations you obtained
 
-figure
+close all
+
+figure('Name','Correlation plots'); set(gcf, 'Renderer', 'Painters' );
 
 load('AllCorrelations.mat')
 
-mythreshhold = 0.8; %set a threshhold you want to put in the graph
+timeinterval = 2; %interval in minutes between timepoints
+mythreshold = 0.78; %set a threshhold you want to put in the graph
+testhresholds = [0:0.01:1];
 movingwindowaverage = 5;
 
-sgolaywindow = 5;
-sgolayorder = 1;
+falseposterr = 2; % range (in timepoints) over which you can forgive a false positive
+falsenegterr = -2; %range (in timepoints) over which you can forgive a false negative
 
-timeinterval = 2;
+allneg = []; %false negative is when the signal never reaches the threshold or it reaches the threshold too late
+allpos = []; %false postive is if the signal hits the threshold too early
 
-for ii = 1:size(allcorrels,2)
-
-    plotthis = allcorrels{1,ii};
-    timeaxis = [ allframes{ii}(1):(allframes{ii}(numel(allframes{ii}))-1) ]*timeinterval;
+for threshold = testhresholds
     
-    adjustby = timeaxis(1) - timeinterval; %how much you want to adjust timeaxis by
-    
-    subplot( 5 , 10 , ii  )
-
-    %plotthis = (plotthis - min(plotthis))/(max(plotthis - min(plotthis)));
-    
-    plot(timeaxis-adjustby,plotthis); %make time start at 0
-    
-    hold on
-    
-    meanplotthis = movmean(plotthis,movingwindowaverage); %find mean trace by window averaging
-    
-    plot(timeaxis-adjustby,meanplotthis) %window averaging
-    
-    title(allcorrels{2,ii} ,'Interpreter','Latex','FontSize', 6 , 'Color' , [0 0.2 0.1])
-    
-    %plot(timeaxis,sgolayfilt(plotthis,sgolayorder,sgolaywindow)) %sgolay filtering
-    
-    plot([ 0 80 ] , [mythreshhold mythreshhold]);
-    
-    if ~isempty(allcommits) % plot manually called commit time by eye
-        
-        plot([ allcommits(ii)*timeinterval-adjustby ,  allcommits(ii)*timeinterval-adjustby  ],[ 0 1 ]);
-        
-    end
-    
-    if ~isempty(allcommits) && max(meanplotthis)>mythreshhold  %calculate difference between manually called commit and commit called by code
-        
-        codecommit = (find(meanplotthis>mythreshhold,1) - 1)*timeinterval; %find commit by code. The -1 is to make it 0 indexed
-        
-        plot([ codecommit ,  codecommit  ],[ 0 1 ] , '--');
-        
-        diffincall = abs((allcommits(ii)*timeinterval-adjustby) - (codecommit)); %difference between calling by eye vs code
-        
-        text(50 , 0.5 , [ 'Diff:', num2str(diffincall) , ' min']  , 'Color' , [0 0.3 0.1] , 'FontSize', 10 )
-        
-    end
-    
-    xlabel('Time (minutes)')
-    ylabel('Correlation')
-    
-   
-    ylim([0 1]);
-    xlim([0 80]);
-    
-    axis square
-end
-
-legend('Raw',['Smoothed (',num2str(movingwindowaverage) , ')']);
-
-set(gcf, 'Renderer', 'Painters' );
-
-%% 7.5 - Look for false positives and false negatives
-
-clear all
-
-load('AllCorrelations.mat')
-movingwindowaverage = 5;
-
-
-falseposterr = 2; % range over which you can forgive a false positive
-
-for thshhold =  [0:0.01:1] %this is the threshhold that you will use to find both false postives and false negatives
     
     falseneg = 0;
     falsepos = 0;
@@ -353,30 +292,80 @@ for thshhold =  [0:0.01:1] %this is the threshhold that you will use to find bot
     for ii = 1:size(allcorrels,2)
         
         coi = allcorrels{1,ii}; %correlation of interest
-        meancoi = movmean(coi,movingwindowaverage);
-        timeaxis = [ allframes{ii}(1):(allframes{ii}(numel(allframes{ii}))-1) ];
+        meancoi = movmean(coi,movingwindowaverage); %find mean trace by window averaging
         
-        if max(meancoi(:)) < thshhold, falseneg = falseneg + 1; end %calculate if false negative or not
+        timeaxis = [ allframes{ii}(1):(allframes{ii}(numel(allframes{ii}))-1) ]*timeinterval;
         
-        firstcross = find(meancoi>thshhold,1); %find first element that goes over the thresshold
-        firstcross = timeaxis(1) + firstcross-1; %adjust based on first timepoint
+        adjustby = timeaxis(1); %how much you want to adjust timeaxis by
         
-        if firstcross < (allcommits(ii) - falseposterr), falsepos = falsepos + 1; end
+         if max(meancoi(:)) < threshold, falseneg = falseneg + 1; end %calculate if false negative or not
+       
+        if ~isempty(allcommits) && max(meancoi)>threshold  %calculate difference between manually called commit and commit called by code
+            
+            codecommit = (find(meancoi>threshold,1) - 1)*timeinterval; %find commit by code. The -1 is to make it 0 indexed
+            diffincall = (allcommits(ii)*timeinterval-adjustby) - (codecommit); %difference between calling by eye vs code
+            
+            if diffincall > falseposterr*timeinterval, falsepos = falsepos + 1; end
+            
+            if diffincall < falsenegterr*timeinterval, falseneg = falseneg + 1; end
+            
+        end
+        
+        
+        if threshold == mythreshold %plot outputs for one of the thresholds
+            
+            subplot( 5 , 10 , ii  )
+            hold on
+            
+            plot(timeaxis-adjustby,coi); %make time start at 0
+            plot(timeaxis-adjustby,meancoi) %window averaging
+            plot([ 0 80 ] , [threshold threshold]);
+            
+            if ~isempty(allcommits) % plot manually called commit time by eye
+                plot([ allcommits(ii)*timeinterval-adjustby ,  allcommits(ii)*timeinterval-adjustby  ],[ 0 1 ]);
+            end
+            
+            if ~isempty(allcommits) && max(meancoi)>threshold  %calculate difference between manually called commit and commit called by code
+                plot([ codecommit ,  codecommit  ],[ 0 1 ] , '--');
+                text(50 , 0.5 , [ 'Diff:', num2str(diffincall) , ' min']  , 'Color' , [0 0.3 0.1] , 'FontSize', 10 )
+                if diffincall > falseposterr*timeinterval
+                    text(50 , 0.5 , [ 'Diff:', num2str(diffincall) , ' min']  , 'Color' , [1 0 0] , 'FontSize', 10 ); %mark false positive with red
+                end
+                
+                if diffincall < falsenegterr*timeinterval
+                     text(50 , 0.5 , [ 'Diff:', num2str(diffincall) , ' min']  , 'Color' , [0 0 1] , 'FontSize', 10 ); %mark false negatives with blue
+                end
+                
+            end
+            
+            title(allcorrels{2,ii} ,'Interpreter','Latex','FontSize', 6 , 'Color' , [0 0.2 0.1])
+            
+            xlabel('Time (minutes)')
+            ylabel('Correlation')
+            
+            ylim([0 1]);
+            xlim([-Inf 80]);
+            
+            axis square
+            
+        end
         
     end
     
-    hold on
     
-    plot(thshhold,falseneg,'r.') %plot total - false negative
-    plot(thshhold,falsepos,'b.')
+    allpos = [allpos , falsepos];
+    allneg = [allneg , falseneg];
     
 end
 
-legend('Falseneg','Falsepos')
+figure('Name','Error plot'); set(gcf, 'Renderer', 'Painters' );
 
-xlabel('Threshhold'); ylabel('Count')
+scatter(testhresholds,allpos,20,'r');
+hold on
+scatter(testhresholds,allneg,20,'b');
+scatter(testhresholds,allneg+allpos,7,'g')
 
-set(gcf, 'Renderer', 'Painters' );
+legend('False Positives','False Negatives','Both Errors')
 
 %% 8 - Plot CV data
 
@@ -391,13 +380,13 @@ figure %plot unprocessed data
 
 for ii = 1:size(allcvs,2)
     
-    plotthis = allcvs{1,ii};
+    coi = allcvs{1,ii};
     committime = allcommits(ii);
     timeaxis = [ allframes{ii}(1):allframes{ii}(numel(allframes{ii})) ];
     
     subplot( 5 , 10 , 2*ii-1 ) %plot the unprocessed signal
     
-    plot(timeaxis,plotthis)
+    plot(timeaxis,coi)
     title(allcvs{2,ii},'Interpreter','Latex')
     
     xlabel('Timepoint'); ylabel('CV');
@@ -409,19 +398,19 @@ figure %plot processed data
 
 for ii = 1:size(allcvs,2)
 
-    plotthis = allcvs{1,ii};
+    coi = allcvs{1,ii};
     committime = allcommits(ii);
     timeaxis = [ allframes{ii}(1):allframes{ii}(numel(allframes{ii})) ];
     
-    [plotthis,committime,timeaxis] = cleanmaxcutnormalize(plotthis,committime,timeaxis,cutout); %normalize and flip signal, cut out 5 timepoints after the peak MAPK activity 
+    [coi,committime,timeaxis] = cleanmaxcutnormalize(coi,committime,timeaxis,cutout); %normalize and flip signal, cut out 5 timepoints after the peak MAPK activity 
     
     
     subplot( 5 , 10 , 2*ii-1 ) %plot the processed signal
     
-    plot(timeaxis,plotthis,'g'); %plot signal
+    plot(timeaxis,coi,'g'); %plot signal
     hold on
-    windowmean = movmean(plotthis,movingwindowaverage); %smooth signal
-    windowstd = movstd(plotthis,movingwindowaverage);
+    windowmean = movmean(coi,movingwindowaverage); %smooth signal
+    windowstd = movstd(coi,movingwindowaverage);
     
     plot(timeaxis,windowmean,'r') %window averaging
     plot(timeaxis,windowstd,'b') %window averaging
