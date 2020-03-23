@@ -314,7 +314,7 @@ for threshold = testhresholds
         
         if threshold == mythreshold %plot outputs for one of the thresholds
             
-            subplot( 5 , 10 , ii  )
+            subplot( 7 , 8 , ii  )
             hold on
             
             plot(timeaxis-adjustby,coi); %make time start at 0
@@ -344,9 +344,9 @@ for threshold = testhresholds
             ylabel('Correlation')
             
             ylim([0 1]);
-            xlim([0 85]);
+            xlim([0 105]);
             
-            axis square
+            %axis square
             
         end
         
